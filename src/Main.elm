@@ -2,12 +2,12 @@ module Main exposing (main)
 
 import Browser
 import Dict exposing (Dict)
+import EverySet exposing (EverySet)
 import Html exposing (Html, button, div, pre, text, textarea)
 import Html.Events exposing (onInput)
 import Json.Decode exposing (decodeString)
 import Json.Decode.Generic exposing (Json(..), json)
 import Json.Encode
-import Set exposing (Set)
 
 
 main =
@@ -46,7 +46,18 @@ type RubyType
 
 
 type alias RubyObject =
-    Dict String RubyType
+    Dict String (EverySet RubyType)
+
+
+merge : RubyObject -> RubyObject -> RubyObject
+merge ruby1 ruby2 =
+    Dict.merge
+        Dict.insert
+        (\field types1 types2 ruby -> Dict.insert field (EverySet.union types1 types2) ruby)
+        Dict.insert
+        ruby1
+        ruby2
+        Dict.empty
 
 
 jsonToSorbet : Json -> RubyType
@@ -75,7 +86,10 @@ jsToRuby : Json -> RubyObject
 jsToRuby json =
     case json of
         JObj object ->
-            Dict.map (\_ v -> jsonToSorbet v) object
+            Dict.map (\_ v -> jsonToSorbet v |> EverySet.singleton) object
+
+        JArr objects ->
+            List.foldl (\js ruby -> merge ruby <| jsToRuby js) Dict.empty objects
 
         _ ->
             Debug.todo "Still need to handle non-object structures"
@@ -104,9 +118,24 @@ update msg model =
 -- VIEW
 
 
-fieldLine : ( String, RubyType ) -> String
-fieldLine ( field, rubyType ) =
-    "  const :" ++ field ++ ", " ++ rubyTypeToString rubyType
+fieldLine : ( String, EverySet RubyType ) -> String
+fieldLine ( field, rubyTypes ) =
+    case EverySet.toList rubyTypes of
+        [] ->
+            -- shouldn't actually happen
+            "  const :" ++ field ++ ", NilClass"
+
+        [ oneRubyType ] ->
+            "  const :" ++ field ++ ", " ++ rubyTypeToString oneRubyType
+
+        multipleRubyTypes ->
+            let
+                types =
+                    List.map rubyTypeToString multipleRubyTypes
+                        |> List.sort
+                        |> String.join ", "
+            in
+            "  const :" ++ field ++ ", T.any(" ++ types ++ ")"
 
 
 rubyTypeToString : RubyType -> String
