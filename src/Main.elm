@@ -132,22 +132,31 @@ update msg model =
 
 fieldLine : ( String, EverySet RubyType ) -> String
 fieldLine ( field, rubyTypes ) =
+    "  const :" ++ field ++ ", " ++ rubyTypesFieldLine rubyTypes
+
+
+rubyTypesFieldLine : EverySet RubyType -> String
+rubyTypesFieldLine rubyTypes =
     case EverySet.toList rubyTypes of
         [] ->
             -- shouldn't actually happen
-            "  const :" ++ field ++ ", NilClass"
+            "NilClass"
 
         [ oneRubyType ] ->
-            "  const :" ++ field ++ ", " ++ rubyTypeToString oneRubyType
+            rubyTypeToString oneRubyType
 
         multipleRubyTypes ->
-            let
-                types =
-                    List.map rubyTypeToString multipleRubyTypes
-                        |> List.sort
-                        |> String.join ", "
-            in
-            "  const :" ++ field ++ ", T.any(" ++ types ++ ")"
+            if List.member RNil multipleRubyTypes then
+                "T.nilable(" ++ rubyTypesFieldLine (EverySet.remove RNil rubyTypes) ++ ")"
+
+            else
+                let
+                    types =
+                        List.map rubyTypeToString multipleRubyTypes
+                            |> List.sort
+                            |> String.join ", "
+                in
+                "T.any(" ++ types ++ ")"
 
 
 rubyTypeToString : RubyType -> String
