@@ -5819,6 +5819,42 @@ var $elm$core$List$append = F2(
 var $elm$core$List$concat = function (lists) {
 	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
 };
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
+var $elm$core$List$member = F2(
+	function (x, xs) {
+		return A2(
+			$elm$core$List$any,
+			function (a) {
+				return _Utils_eq(a, x);
+			},
+			xs);
+	});
+var $Gizra$elm_all_set$EverySet$remove = F2(
+	function (k, _v0) {
+		var d = _v0.a;
+		return $Gizra$elm_all_set$EverySet$EverySet(
+			A2($pzp1997$assoc_list$AssocList$remove, k, d));
+	});
 var $author$project$Main$rubyTypeToString = function (rubyType) {
 	switch (rubyType.$) {
 		case 'RBool':
@@ -5847,26 +5883,34 @@ var $Gizra$elm_all_set$EverySet$toList = function (_v0) {
 	var d = _v0.a;
 	return $pzp1997$assoc_list$AssocList$keys(d);
 };
+var $author$project$Main$rubyTypesFieldLine = function (rubyTypes) {
+	var _v0 = $Gizra$elm_all_set$EverySet$toList(rubyTypes);
+	if (!_v0.b) {
+		return 'NilClass';
+	} else {
+		if (!_v0.b.b) {
+			var oneRubyType = _v0.a;
+			return $author$project$Main$rubyTypeToString(oneRubyType);
+		} else {
+			var multipleRubyTypes = _v0;
+			if (A2($elm$core$List$member, $author$project$Main$RNil, multipleRubyTypes)) {
+				return 'T.nilable(' + ($author$project$Main$rubyTypesFieldLine(
+					A2($Gizra$elm_all_set$EverySet$remove, $author$project$Main$RNil, rubyTypes)) + ')');
+			} else {
+				var types = A2(
+					$elm$core$String$join,
+					', ',
+					$elm$core$List$sort(
+						A2($elm$core$List$map, $author$project$Main$rubyTypeToString, multipleRubyTypes)));
+				return 'T.any(' + (types + ')');
+			}
+		}
+	}
+};
 var $author$project$Main$fieldLine = function (_v0) {
 	var field = _v0.a;
 	var rubyTypes = _v0.b;
-	var _v1 = $Gizra$elm_all_set$EverySet$toList(rubyTypes);
-	if (!_v1.b) {
-		return '  const :' + (field + ', NilClass');
-	} else {
-		if (!_v1.b.b) {
-			var oneRubyType = _v1.a;
-			return '  const :' + (field + (', ' + $author$project$Main$rubyTypeToString(oneRubyType)));
-		} else {
-			var multipleRubyTypes = _v1;
-			var types = A2(
-				$elm$core$String$join,
-				', ',
-				$elm$core$List$sort(
-					A2($elm$core$List$map, $author$project$Main$rubyTypeToString, multipleRubyTypes)));
-			return '  const :' + (field + (', T.any(' + (types + ')')));
-		}
-	}
+	return '  const :' + (field + (', ' + $author$project$Main$rubyTypesFieldLine(rubyTypes)));
 };
 var $author$project$Main$rubyToString = function (rubyObject) {
 	var lastLine = 'end';
