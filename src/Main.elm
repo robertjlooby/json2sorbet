@@ -8,6 +8,7 @@ import Html.Events exposing (onInput)
 import Json.Decode exposing (decodeString)
 import Json.Decode.Generic exposing (Json(..), json)
 import Json.Encode
+import Regex
 
 
 main =
@@ -39,6 +40,7 @@ init =
 
 type RubyType
     = RBool
+    | RDate
     | RFloat
     | RInt
     | RNil
@@ -75,11 +77,21 @@ jsonToSorbet json =
         JNull ->
             RNil
 
-        JString _ ->
-            RString
+        JString str ->
+            if Regex.contains date str then
+                RDate
+
+            else
+                RString
 
         _ ->
             Debug.todo "Still need to handle recursive structures"
+
+
+date : Regex.Regex
+date =
+    Maybe.withDefault Regex.never <|
+        Regex.fromString "^\\d{4}-\\d{2}-\\d{2}$"
 
 
 jsToRuby : Json -> RubyObject
@@ -143,6 +155,9 @@ rubyTypeToString rubyType =
     case rubyType of
         RBool ->
             "T::Boolean"
+
+        RDate ->
+            "Date"
 
         RFloat ->
             "Float"
