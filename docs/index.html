@@ -4324,6 +4324,107 @@ function _Browser_load(url)
 		}
 	}));
 }
+
+
+// CREATE
+
+var _Regex_never = /.^/;
+
+var _Regex_fromStringWith = F2(function(options, string)
+{
+	var flags = 'g';
+	if (options.multiline) { flags += 'm'; }
+	if (options.caseInsensitive) { flags += 'i'; }
+
+	try
+	{
+		return $elm$core$Maybe$Just(new RegExp(string, flags));
+	}
+	catch(error)
+	{
+		return $elm$core$Maybe$Nothing;
+	}
+});
+
+
+// USE
+
+var _Regex_contains = F2(function(re, string)
+{
+	return string.match(re) !== null;
+});
+
+
+var _Regex_findAtMost = F3(function(n, re, str)
+{
+	var out = [];
+	var number = 0;
+	var string = str;
+	var lastIndex = re.lastIndex;
+	var prevLastIndex = -1;
+	var result;
+	while (number++ < n && (result = re.exec(string)))
+	{
+		if (prevLastIndex == re.lastIndex) break;
+		var i = result.length - 1;
+		var subs = new Array(i);
+		while (i > 0)
+		{
+			var submatch = result[i];
+			subs[--i] = submatch
+				? $elm$core$Maybe$Just(submatch)
+				: $elm$core$Maybe$Nothing;
+		}
+		out.push(A4($elm$regex$Regex$Match, result[0], result.index, number, _List_fromArray(subs)));
+		prevLastIndex = re.lastIndex;
+	}
+	re.lastIndex = lastIndex;
+	return _List_fromArray(out);
+});
+
+
+var _Regex_replaceAtMost = F4(function(n, re, replacer, string)
+{
+	var count = 0;
+	function jsReplacer(match)
+	{
+		if (count++ >= n)
+		{
+			return match;
+		}
+		var i = arguments.length - 3;
+		var submatches = new Array(i);
+		while (i > 0)
+		{
+			var submatch = arguments[i];
+			submatches[--i] = submatch
+				? $elm$core$Maybe$Just(submatch)
+				: $elm$core$Maybe$Nothing;
+		}
+		return replacer(A4($elm$regex$Regex$Match, match, arguments[arguments.length - 2], count, _List_fromArray(submatches)));
+	}
+	return string.replace(re, jsReplacer);
+});
+
+var _Regex_splitAtMost = F3(function(n, re, str)
+{
+	var string = str;
+	var out = [];
+	var start = re.lastIndex;
+	var restoreLastIndex = re.lastIndex;
+	while (n--)
+	{
+		var result = re.exec(string);
+		if (!result) break;
+		out.push(string.slice(start, result.index));
+		start = re.lastIndex;
+	}
+	out.push(string.slice(start));
+	re.lastIndex = restoreLastIndex;
+	return _List_fromArray(out);
+});
+
+var _Regex_infinity = Infinity;
 var $author$project$Main$Empty = {$: 'Empty'};
 var $author$project$Main$init = $author$project$Main$Empty;
 var $elm$core$Basics$EQ = {$: 'EQ'};
@@ -5146,10 +5247,37 @@ var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
 var $author$project$Main$RBool = {$: 'RBool'};
+var $author$project$Main$RDate = {$: 'RDate'};
 var $author$project$Main$RFloat = {$: 'RFloat'};
 var $author$project$Main$RInt = {$: 'RInt'};
 var $author$project$Main$RNil = {$: 'RNil'};
 var $author$project$Main$RString = {$: 'RString'};
+var $elm$regex$Regex$Match = F4(
+	function (match, index, number, submatches) {
+		return {index: index, match: match, number: number, submatches: submatches};
+	});
+var $elm$regex$Regex$contains = _Regex_contains;
+var $elm$regex$Regex$fromStringWith = _Regex_fromStringWith;
+var $elm$regex$Regex$fromString = function (string) {
+	return A2(
+		$elm$regex$Regex$fromStringWith,
+		{caseInsensitive: false, multiline: false},
+		string);
+};
+var $elm$regex$Regex$never = _Regex_never;
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $author$project$Main$date = A2(
+	$elm$core$Maybe$withDefault,
+	$elm$regex$Regex$never,
+	$elm$regex$Regex$fromString('^\\d{4}-\\d{2}-\\d{2}$'));
 var $elm$core$Debug$todo = _Debug_todo;
 var $author$project$Main$jsonToSorbet = function (json) {
 	switch (json.$) {
@@ -5162,13 +5290,14 @@ var $author$project$Main$jsonToSorbet = function (json) {
 		case 'JNull':
 			return $author$project$Main$RNil;
 		case 'JString':
-			return $author$project$Main$RString;
+			var str = json.a;
+			return A2($elm$regex$Regex$contains, $author$project$Main$date, str) ? $author$project$Main$RDate : $author$project$Main$RString;
 		default:
 			return _Debug_todo(
 				'Main',
 				{
-					start: {line: 82, column: 13},
-					end: {line: 82, column: 23}
+					start: {line: 88, column: 13},
+					end: {line: 88, column: 23}
 				})('Still need to handle recursive structures');
 	}
 };
@@ -5506,8 +5635,8 @@ var $author$project$Main$jsToRuby = function (json) {
 			return _Debug_todo(
 				'Main',
 				{
-					start: {line: 95, column: 13},
-					end: {line: 95, column: 23}
+					start: {line: 107, column: 13},
+					end: {line: 107, column: 23}
 				})('Still need to handle non-object structures');
 	}
 };
@@ -5694,6 +5823,8 @@ var $author$project$Main$rubyTypeToString = function (rubyType) {
 	switch (rubyType.$) {
 		case 'RBool':
 			return 'T::Boolean';
+		case 'RDate':
+			return 'Date';
 		case 'RFloat':
 			return 'Float';
 		case 'RInt':
