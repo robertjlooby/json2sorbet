@@ -5285,6 +5285,7 @@ var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
 var $author$project$Main$RBool = {$: 'RBool'};
 var $author$project$Main$RDate = {$: 'RDate'};
+var $author$project$Main$RDateTime = {$: 'RDateTime'};
 var $author$project$Main$RFloat = {$: 'RFloat'};
 var $author$project$Main$RInt = {$: 'RInt'};
 var $author$project$Main$RNil = {$: 'RNil'};
@@ -5315,6 +5316,10 @@ var $author$project$Main$date = A2(
 	$elm$core$Maybe$withDefault,
 	$elm$regex$Regex$never,
 	$elm$regex$Regex$fromString('^\\d{4}-\\d{2}-\\d{2}$'));
+var $author$project$Main$datetime = A2(
+	$elm$core$Maybe$withDefault,
+	$elm$regex$Regex$never,
+	$elm$regex$Regex$fromString('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}'));
 var $elm$core$Debug$todo = _Debug_todo;
 var $author$project$Main$jsonToSorbet = function (json) {
 	switch (json.$) {
@@ -5328,13 +5333,13 @@ var $author$project$Main$jsonToSorbet = function (json) {
 			return $author$project$Main$RNil;
 		case 'JString':
 			var str = json.a;
-			return A2($elm$regex$Regex$contains, $author$project$Main$date, str) ? $author$project$Main$RDate : $author$project$Main$RString;
+			return A2($elm$regex$Regex$contains, $author$project$Main$date, str) ? $author$project$Main$RDate : (A2($elm$regex$Regex$contains, $author$project$Main$datetime, str) ? $author$project$Main$RDateTime : $author$project$Main$RString);
 		default:
 			return _Debug_todo(
 				'Main',
 				{
-					start: {line: 91, column: 13},
-					end: {line: 91, column: 23}
+					start: {line: 95, column: 13},
+					end: {line: 95, column: 23}
 				})('Still need to handle recursive structures');
 	}
 };
@@ -5672,8 +5677,8 @@ var $author$project$Main$jsToRuby = function (json) {
 			return _Debug_todo(
 				'Main',
 				{
-					start: {line: 110, column: 13},
-					end: {line: 110, column: 23}
+					start: {line: 120, column: 13},
+					end: {line: 120, column: 23}
 				})('Still need to handle non-object structures');
 	}
 };
@@ -12605,6 +12610,8 @@ var $author$project$Main$rubyTypeToString = function (rubyType) {
 			return 'T::Boolean';
 		case 'RDate':
 			return 'Date';
+		case 'RDateTime':
+			return 'DateTime';
 		case 'RFloat':
 			return 'Float';
 		case 'RInt':
