@@ -2,9 +2,12 @@ module Main exposing (main)
 
 import Browser
 import Dict exposing (Dict)
+import Element exposing (Element, el, fill, height, html, htmlAttribute, paragraph, spacing, text, width)
+import Element.Font as Font
+import Element.Input exposing (focusedOnLoad, multiline)
 import EverySet exposing (EverySet)
-import Html exposing (Html, button, div, pre, text, textarea)
-import Html.Events exposing (onInput)
+import Html exposing (Html)
+import Html.Attributes exposing (style)
 import Json.Decode exposing (decodeString)
 import Json.Decode.Generic exposing (Json(..), json)
 import Json.Encode
@@ -203,24 +206,48 @@ rubyToString rubyObject =
 
 view : Model -> Html Msg
 view model =
-    div [] [ inputView, resultView model ]
+    Element.row
+        [ height fill
+        , width fill
+        , spacing 10
+        ]
+        [ inputView, resultView model ]
+        |> Element.layout []
 
 
-inputView : Html Msg
+inputView : Element Msg
 inputView =
-    textarea [ onInput NewJson ] []
+    multiline
+        [ height fill
+        , width fill
+        , focusedOnLoad
+        ]
+        { label = Element.Input.labelHidden "JSON"
+        , onChange = NewJson
+        , placeholder = Nothing
+        , spellcheck = False
+        , text = ""
+        }
 
 
-resultView : Model -> Html Msg
+resultView : Model -> Element Msg
 resultView model =
-    case model of
-        Empty ->
-            div [] [ text "nothing" ]
+    let
+        contents =
+            case model of
+                Empty ->
+                    "Enter some JSON in the box on the left"
 
-        JsonError err ->
-            div [] [ text <| Json.Decode.errorToString err ]
+                JsonError err ->
+                    Json.Decode.errorToString err
 
-        Ruby value ->
-            div []
-                [ pre [] [ text <| rubyToString value ]
-                ]
+                Ruby value ->
+                    rubyToString value
+    in
+    paragraph
+        [ height fill
+        , width fill
+        , Font.family [ Font.monospace ]
+        , htmlAttribute (style "white-space" "pre-wrap")
+        ]
+        [ html (Html.text contents) ]
