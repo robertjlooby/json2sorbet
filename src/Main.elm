@@ -44,6 +44,7 @@ init =
 type RubyType
     = RBool
     | RDate
+    | RDateTime
     | RFloat
     | RInt
     | RNil
@@ -84,6 +85,9 @@ jsonToSorbet json =
             if Regex.contains date str then
                 RDate
 
+            else if Regex.contains datetime str then
+                RDateTime
+
             else
                 RString
 
@@ -95,6 +99,12 @@ date : Regex.Regex
 date =
     Maybe.withDefault Regex.never <|
         Regex.fromString "^\\d{4}-\\d{2}-\\d{2}$"
+
+
+datetime : Regex.Regex
+datetime =
+    Maybe.withDefault Regex.never <|
+        Regex.fromString "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}"
 
 
 jsToRuby : Json -> RubyObject
@@ -170,6 +180,9 @@ rubyTypeToString rubyType =
 
         RDate ->
             "Date"
+
+        RDateTime ->
+            "DateTime"
 
         RFloat ->
             "Float"
