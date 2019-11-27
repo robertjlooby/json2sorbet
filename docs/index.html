@@ -5471,6 +5471,52 @@ var $elm$core$Dict$insert = F3(
 			return x;
 		}
 	});
+var $Gizra$elm_all_set$EverySet$EverySet = function (a) {
+	return {$: 'EverySet', a: a};
+};
+var $pzp1997$assoc_list$AssocList$D = function (a) {
+	return {$: 'D', a: a};
+};
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm$core$Basics$neq = _Utils_notEqual;
+var $pzp1997$assoc_list$AssocList$remove = F2(
+	function (targetKey, _v0) {
+		var alist = _v0.a;
+		return $pzp1997$assoc_list$AssocList$D(
+			A2(
+				$elm$core$List$filter,
+				function (_v1) {
+					var key = _v1.a;
+					return !_Utils_eq(key, targetKey);
+				},
+				alist));
+	});
+var $pzp1997$assoc_list$AssocList$insert = F3(
+	function (key, value, dict) {
+		var _v0 = A2($pzp1997$assoc_list$AssocList$remove, key, dict);
+		var alteredAlist = _v0.a;
+		return $pzp1997$assoc_list$AssocList$D(
+			A2(
+				$elm$core$List$cons,
+				_Utils_Tuple2(key, value),
+				alteredAlist));
+	});
+var $Gizra$elm_all_set$EverySet$insert = F2(
+	function (k, _v0) {
+		var d = _v0.a;
+		return $Gizra$elm_all_set$EverySet$EverySet(
+			A3($pzp1997$assoc_list$AssocList$insert, k, _Utils_Tuple0, d));
+	});
 var $elm$core$Dict$foldl = F3(
 	function (func, acc, dict) {
 		foldl:
@@ -5557,46 +5603,6 @@ var $elm$core$Dict$merge = F6(
 			intermediateResult,
 			leftovers);
 	});
-var $Gizra$elm_all_set$EverySet$EverySet = function (a) {
-	return {$: 'EverySet', a: a};
-};
-var $pzp1997$assoc_list$AssocList$D = function (a) {
-	return {$: 'D', a: a};
-};
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
-var $elm$core$Basics$neq = _Utils_notEqual;
-var $pzp1997$assoc_list$AssocList$remove = F2(
-	function (targetKey, _v0) {
-		var alist = _v0.a;
-		return $pzp1997$assoc_list$AssocList$D(
-			A2(
-				$elm$core$List$filter,
-				function (_v1) {
-					var key = _v1.a;
-					return !_Utils_eq(key, targetKey);
-				},
-				alist));
-	});
-var $pzp1997$assoc_list$AssocList$insert = F3(
-	function (key, value, dict) {
-		var _v0 = A2($pzp1997$assoc_list$AssocList$remove, key, dict);
-		var alteredAlist = _v0.a;
-		return $pzp1997$assoc_list$AssocList$D(
-			A2(
-				$elm$core$List$cons,
-				_Utils_Tuple2(key, value),
-				alteredAlist));
-	});
 var $pzp1997$assoc_list$AssocList$union = F2(
 	function (_v0, rightDict) {
 		var leftAlist = _v0.a;
@@ -5622,7 +5628,14 @@ var $author$project$Main$merge = F2(
 	function (ruby1, ruby2) {
 		return A6(
 			$elm$core$Dict$merge,
-			$elm$core$Dict$insert,
+			F3(
+				function (field, types1, ruby) {
+					return A3(
+						$elm$core$Dict$insert,
+						field,
+						A2($Gizra$elm_all_set$EverySet$insert, $author$project$Main$RNil, types1),
+						ruby);
+				}),
 			F4(
 				function (field, types1, types2, ruby) {
 					return A3(
@@ -5631,7 +5644,14 @@ var $author$project$Main$merge = F2(
 						A2($Gizra$elm_all_set$EverySet$union, types1, types2),
 						ruby);
 				}),
-			$elm$core$Dict$insert,
+			F3(
+				function (field, types2, ruby) {
+					return A3(
+						$elm$core$Dict$insert,
+						field,
+						A2($Gizra$elm_all_set$EverySet$insert, $author$project$Main$RNil, types2),
+						ruby);
+				}),
 			ruby1,
 			ruby2,
 			$elm$core$Dict$empty);
@@ -5661,24 +5681,30 @@ var $author$project$Main$jsToRuby = function (json) {
 					}),
 				object);
 		case 'JArr':
-			var objects = json.a;
-			return A3(
-				$elm$core$List$foldl,
-				F2(
-					function (js, ruby) {
-						return A2(
-							$author$project$Main$merge,
-							ruby,
-							$author$project$Main$jsToRuby(js));
-					}),
-				$elm$core$Dict$empty,
-				objects);
+			if (!json.a.b) {
+				return $elm$core$Dict$empty;
+			} else {
+				var _v2 = json.a;
+				var o = _v2.a;
+				var os = _v2.b;
+				return A3(
+					$elm$core$List$foldl,
+					F2(
+						function (js, ruby) {
+							return A2(
+								$author$project$Main$merge,
+								ruby,
+								$author$project$Main$jsToRuby(js));
+						}),
+					$author$project$Main$jsToRuby(o),
+					os);
+			}
 		default:
 			return _Debug_todo(
 				'Main',
 				{
-					start: {line: 120, column: 13},
-					end: {line: 120, column: 23}
+					start: {line: 123, column: 13},
+					end: {line: 123, column: 23}
 				})('Still need to handle non-object structures');
 	}
 };
