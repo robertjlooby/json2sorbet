@@ -58,9 +58,9 @@ type alias RubyObject =
 merge : RubyObject -> RubyObject -> RubyObject
 merge ruby1 ruby2 =
     Dict.merge
-        Dict.insert
+        (\field types1 ruby -> Dict.insert field (EverySet.insert RNil types1) ruby)
         (\field types1 types2 ruby -> Dict.insert field (EverySet.union types1 types2) ruby)
-        Dict.insert
+        (\field types2 ruby -> Dict.insert field (EverySet.insert RNil types2) ruby)
         ruby1
         ruby2
         Dict.empty
@@ -113,8 +113,11 @@ jsToRuby json =
         JObj object ->
             Dict.map (\_ v -> jsonToSorbet v |> EverySet.singleton) object
 
-        JArr objects ->
-            List.foldl (\js ruby -> merge ruby <| jsToRuby js) Dict.empty objects
+        JArr [] ->
+            Dict.empty
+
+        JArr (o :: os) ->
+            List.foldl (\js ruby -> merge ruby <| jsToRuby js) (jsToRuby o) os
 
         _ ->
             Debug.todo "Still need to handle non-object structures"
