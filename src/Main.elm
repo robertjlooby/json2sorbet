@@ -26,9 +26,14 @@ main =
 -- MODEL
 
 
+type Json2SorbetError
+    = Json2SorbetError String
+
+
 type Model
     = Empty
     | JsonError Json.Decode.Error
+    | Unsupported Json2SorbetError
     | Ruby RubyObject
 
 
@@ -66,33 +71,36 @@ merge ruby1 ruby2 =
         Dict.empty
 
 
-jsonToSorbet : Json -> RubyType
+jsonToSorbet : Json -> Result Json2SorbetError RubyType
 jsonToSorbet json =
     case json of
         JBool _ ->
-            RBool
+            Ok RBool
 
         JFloat _ ->
-            RFloat
+            Ok RFloat
 
         JInt _ ->
-            RInt
+            Ok RInt
 
         JNull ->
-            RNil
+            Ok RNil
 
         JString str ->
             if Regex.contains date str then
-                RDate
+                Ok RDate
 
             else if Regex.contains datetime str then
-                RDateTime
+                Ok RDateTime
 
             else
-                RString
+                Ok RString
 
-        _ ->
-            Debug.todo "Still need to handle recursive structures"
+        JArr _ ->
+            Err <| Json2SorbetError "Can't handle a nested array in this position yet"
+
+        JObj _ ->
+            Err <| Json2SorbetError "Can't handle a nested object in this position yet"
 
 
 date : Regex.Regex
@@ -107,20 +115,32 @@ datetime =
         Regex.fromString "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}"
 
 
-jsToRuby : Json -> RubyObject
+jsToRuby : Json -> Result Json2SorbetError RubyObject
 jsToRuby json =
     case json of
         JObj object ->
-            Dict.map (\_ v -> jsonToSorbet v |> EverySet.singleton) object
+            Dict.foldl
+                (\k v ruby ->
+                    Result.map2
+                        (Dict.insert k)
+                        (jsonToSorbet v |> Result.map EverySet.singleton)
+                        ruby
+                )
+                (Ok Dict.empty)
+                object
 
         JArr [] ->
-            Dict.empty
+            Ok Dict.empty
 
         JArr (o :: os) ->
-            List.foldl (\js ruby -> merge ruby <| jsToRuby js) (jsToRuby o) os
+            -- Convert first item separately so that merge doesn't consider all fields nilable
+            List.foldl
+                (\js ruby -> Result.map2 merge ruby (jsToRuby js))
+                (jsToRuby o)
+                os
 
         _ ->
-            Debug.todo "Still need to handle non-object structures"
+            Err <| Json2SorbetError "Top level value must be an object or array of objects"
 
 
 type Msg
@@ -139,7 +159,12 @@ update msg model =
                     JsonError err
 
                 Ok json ->
-                    Ruby <| jsToRuby json
+                    case jsToRuby json of
+                        Ok ruby ->
+                            Ruby ruby
+
+                        Err err ->
+                            Unsupported err
 
 
 
@@ -256,6 +281,9 @@ resultView model =
 
                 JsonError err ->
                     Json.Decode.errorToString err
+
+                Unsupported (Json2SorbetError errMsg) ->
+                    "Unsupported: " ++ errMsg
 
                 Ruby value ->
                     rubyToString value
