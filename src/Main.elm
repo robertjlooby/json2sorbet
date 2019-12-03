@@ -34,7 +34,7 @@ type Model
     = Empty
     | JsonError Json.Decode.Error
     | Unsupported Json2SorbetError
-    | Ruby RubyObject
+    | Success SorbetStruct
 
 
 init : Model
@@ -56,23 +56,27 @@ type RubyType
     | RString
 
 
-type alias RubyObject =
-    Dict String (EverySet RubyType)
+type alias SorbetStruct =
+    Dict String SorbetType
 
 
-merge : RubyObject -> RubyObject -> RubyObject
-merge ruby1 ruby2 =
+type alias SorbetType =
+    EverySet RubyType
+
+
+merge : SorbetStruct -> SorbetStruct -> SorbetStruct
+merge struct1 struct2 =
     Dict.merge
-        (\field types1 ruby -> Dict.insert field (EverySet.insert RNil types1) ruby)
-        (\field types1 types2 ruby -> Dict.insert field (EverySet.union types1 types2) ruby)
-        (\field types2 ruby -> Dict.insert field (EverySet.insert RNil types2) ruby)
-        ruby1
-        ruby2
+        (\field types1 struct -> Dict.insert field (EverySet.insert RNil types1) struct)
+        (\field types1 types2 struct -> Dict.insert field (EverySet.union types1 types2) struct)
+        (\field types2 struct -> Dict.insert field (EverySet.insert RNil types2) struct)
+        struct1
+        struct2
         Dict.empty
 
 
-jsonToSorbet : Json -> Result Json2SorbetError RubyType
-jsonToSorbet json =
+jsonValueToRubyType : Json -> Result Json2SorbetError RubyType
+jsonValueToRubyType json =
     case json of
         JBool _ ->
             Ok RBool
@@ -115,16 +119,16 @@ datetime =
         Regex.fromString "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}"
 
 
-jsToRuby : Json -> Result Json2SorbetError RubyObject
-jsToRuby json =
+jsonToSorbetStruct : Json -> Result Json2SorbetError SorbetStruct
+jsonToSorbetStruct json =
     case json of
         JObj object ->
             Dict.foldl
-                (\k v ruby ->
+                (\k v struct ->
                     Result.map2
                         (Dict.insert k)
-                        (jsonToSorbet v |> Result.map EverySet.singleton)
-                        ruby
+                        (jsonValueToRubyType v |> Result.map EverySet.singleton)
+                        struct
                 )
                 (Ok Dict.empty)
                 object
@@ -135,8 +139,8 @@ jsToRuby json =
         JArr (o :: os) ->
             -- Convert first item separately so that merge doesn't consider all fields nilable
             List.foldl
-                (\js ruby -> Result.map2 merge ruby (jsToRuby js))
-                (jsToRuby o)
+                (\js struct -> Result.map2 merge struct (jsonToSorbetStruct js))
+                (jsonToSorbetStruct o)
                 os
 
         _ ->
@@ -159,9 +163,9 @@ update msg model =
                     JsonError err
 
                 Ok json ->
-                    case jsToRuby json of
-                        Ok ruby ->
-                            Ruby ruby
+                    case jsonToSorbetStruct json of
+                        Ok struct ->
+                            Success struct
 
                         Err err ->
                             Unsupported err
@@ -171,14 +175,14 @@ update msg model =
 -- VIEW
 
 
-fieldLine : ( String, EverySet RubyType ) -> String
-fieldLine ( field, rubyTypes ) =
-    "  const :" ++ field ++ ", " ++ rubyTypesFieldLine rubyTypes
+fieldLine : ( String, SorbetType ) -> String
+fieldLine ( field, sorbetType ) =
+    "  const :" ++ field ++ ", " ++ sorbetTypeToString sorbetType
 
 
-rubyTypesFieldLine : EverySet RubyType -> String
-rubyTypesFieldLine rubyTypes =
-    case EverySet.toList rubyTypes of
+sorbetTypeToString : SorbetType -> String
+sorbetTypeToString sorbetType =
+    case EverySet.toList sorbetType of
         [] ->
             -- shouldn't actually happen
             "NilClass"
@@ -188,7 +192,7 @@ rubyTypesFieldLine rubyTypes =
 
         multipleRubyTypes ->
             if List.member RNil multipleRubyTypes then
-                "T.nilable(" ++ rubyTypesFieldLine (EverySet.remove RNil rubyTypes) ++ ")"
+                "T.nilable(" ++ sorbetTypeToString (EverySet.remove RNil sorbetType) ++ ")"
 
             else
                 let
@@ -225,14 +229,16 @@ rubyTypeToString rubyType =
             "String"
 
 
-rubyToString : RubyObject -> String
-rubyToString rubyObject =
+sorbetStructToString : SorbetStruct -> String
+sorbetStructToString sorbetStruct =
     let
         firstLine =
             "class Thing < T::Struct"
 
         fields =
-            Dict.toList rubyObject |> List.sortBy Tuple.first |> List.map fieldLine
+            Dict.toList sorbetStruct
+                |> List.sortBy Tuple.first
+                |> List.map fieldLine
 
         lastLine =
             "end"
@@ -285,8 +291,8 @@ resultView model =
                 Unsupported (Json2SorbetError errMsg) ->
                     "Unsupported: " ++ errMsg
 
-                Ruby value ->
-                    rubyToString value
+                Success sorbetStruct ->
+                    sorbetStructToString sorbetStruct
     in
     paragraph
         [ height fill
