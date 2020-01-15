@@ -180,6 +180,31 @@ update msg model =
 -- VIEW
 
 
+emptyArray : RubyType
+emptyArray =
+    RArr EverySet.empty
+
+
+isNonEmptyArray : RubyType -> Bool
+isNonEmptyArray rubyType =
+    case rubyType of
+        RArr sorbetType ->
+            EverySet.size sorbetType > 0
+
+        _ ->
+            False
+
+
+refine : SorbetType -> SorbetType
+refine sorbetType =
+    if EverySet.member emptyArray sorbetType && EverySet.size (EverySet.filter isNonEmptyArray sorbetType) > 0 then
+        -- given [{"a": []}, {"a": [1]}], refine to just T::Array[Integer] instead of T.any(T::Array[T.untyped], T::Array[Integer])
+        EverySet.remove emptyArray sorbetType
+
+    else
+        sorbetType
+
+
 fieldLine : ( String, SorbetType ) -> String
 fieldLine ( field, sorbetType ) =
     "  const :" ++ field ++ ", " ++ sorbetTypeToString sorbetType
@@ -187,7 +212,7 @@ fieldLine ( field, sorbetType ) =
 
 sorbetTypeToString : SorbetType -> String
 sorbetTypeToString sorbetType =
-    case EverySet.toList sorbetType of
+    case EverySet.toList (refine sorbetType) of
         [] ->
             "T.untyped"
 
