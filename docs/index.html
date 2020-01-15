@@ -12631,11 +12631,93 @@ var $elm$core$List$member = F2(
 			},
 			xs);
 	});
+var $author$project$Main$emptyArray = $author$project$Main$RArr($Gizra$elm_all_set$EverySet$empty);
+var $pzp1997$assoc_list$AssocList$filter = F2(
+	function (isGood, _v0) {
+		var alist = _v0;
+		return A2(
+			$elm$core$List$filter,
+			function (_v1) {
+				var key = _v1.a;
+				var value = _v1.b;
+				return A2(isGood, key, value);
+			},
+			alist);
+	});
+var $Gizra$elm_all_set$EverySet$filter = F2(
+	function (p, _v0) {
+		var d = _v0;
+		return A2(
+			$pzp1997$assoc_list$AssocList$filter,
+			F2(
+				function (k, _v1) {
+					return p(k);
+				}),
+			d);
+	});
+var $pzp1997$assoc_list$AssocList$size = function (_v0) {
+	var alist = _v0;
+	return $elm$core$List$length(alist);
+};
+var $Gizra$elm_all_set$EverySet$size = function (_v0) {
+	var d = _v0;
+	return $pzp1997$assoc_list$AssocList$size(d);
+};
+var $author$project$Main$isNonEmptyArray = function (rubyType) {
+	if (!rubyType.$) {
+		var sorbetType = rubyType.a;
+		return $Gizra$elm_all_set$EverySet$size(sorbetType) > 0;
+	} else {
+		return false;
+	}
+};
+var $pzp1997$assoc_list$AssocList$get = F2(
+	function (targetKey, _v0) {
+		get:
+		while (true) {
+			var alist = _v0;
+			if (!alist.b) {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var _v2 = alist.a;
+				var key = _v2.a;
+				var value = _v2.b;
+				var rest = alist.b;
+				if (_Utils_eq(key, targetKey)) {
+					return $elm$core$Maybe$Just(value);
+				} else {
+					var $temp$targetKey = targetKey,
+						$temp$_v0 = rest;
+					targetKey = $temp$targetKey;
+					_v0 = $temp$_v0;
+					continue get;
+				}
+			}
+		}
+	});
+var $pzp1997$assoc_list$AssocList$member = F2(
+	function (targetKey, dict) {
+		var _v0 = A2($pzp1997$assoc_list$AssocList$get, targetKey, dict);
+		if (!_v0.$) {
+			return true;
+		} else {
+			return false;
+		}
+	});
+var $Gizra$elm_all_set$EverySet$member = F2(
+	function (k, _v0) {
+		var d = _v0;
+		return A2($pzp1997$assoc_list$AssocList$member, k, d);
+	});
 var $Gizra$elm_all_set$EverySet$remove = F2(
 	function (k, _v0) {
 		var d = _v0;
 		return A2($pzp1997$assoc_list$AssocList$remove, k, d);
 	});
+var $author$project$Main$refine = function (sorbetType) {
+	return (A2($Gizra$elm_all_set$EverySet$member, $author$project$Main$emptyArray, sorbetType) && ($Gizra$elm_all_set$EverySet$size(
+		A2($Gizra$elm_all_set$EverySet$filter, $author$project$Main$isNonEmptyArray, sorbetType)) > 0)) ? A2($Gizra$elm_all_set$EverySet$remove, $author$project$Main$emptyArray, sorbetType) : sorbetType;
+};
 var $elm$core$List$sortBy = _List_sortBy;
 var $elm$core$List$sort = function (xs) {
 	return A2($elm$core$List$sortBy, $elm$core$Basics$identity, xs);
@@ -12670,7 +12752,8 @@ var $author$project$Main$rubyTypeToString = function (rubyType) {
 	}
 };
 var $author$project$Main$sorbetTypeToString = function (sorbetType) {
-	var _v0 = $Gizra$elm_all_set$EverySet$toList(sorbetType);
+	var _v0 = $Gizra$elm_all_set$EverySet$toList(
+		$author$project$Main$refine(sorbetType));
 	if (!_v0.b) {
 		return 'T.untyped';
 	} else {
