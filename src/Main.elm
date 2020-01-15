@@ -47,7 +47,8 @@ init =
 
 
 type RubyType
-    = RBool
+    = RArr SorbetType
+    | RBool
     | RDate
     | RDateTime
     | RFloat
@@ -75,33 +76,37 @@ merge struct1 struct2 =
         Dict.empty
 
 
-jsonValueToRubyType : Json -> Result Json2SorbetError RubyType
-jsonValueToRubyType json =
+jsonValueToSorbetType : Json -> Result Json2SorbetError SorbetType
+jsonValueToSorbetType json =
     case json of
         JBool _ ->
-            Ok RBool
+            Ok <| EverySet.singleton RBool
 
         JFloat _ ->
-            Ok RFloat
+            Ok <| EverySet.singleton RFloat
 
         JInt _ ->
-            Ok RInt
+            Ok <| EverySet.singleton RInt
 
         JNull ->
-            Ok RNil
+            Ok <| EverySet.singleton RNil
 
         JString str ->
             if Regex.contains date str then
-                Ok RDate
+                Ok <| EverySet.singleton RDate
 
             else if Regex.contains datetime str then
-                Ok RDateTime
+                Ok <| EverySet.singleton RDateTime
 
             else
-                Ok RString
+                Ok <| EverySet.singleton RString
 
-        JArr _ ->
-            Err <| Json2SorbetError "Can't handle a nested array in this position yet"
+        JArr arr ->
+            List.foldl
+                (\js st -> Result.map2 EverySet.union (jsonValueToSorbetType js) st)
+                (Ok EverySet.empty)
+                arr
+                |> Result.map (\sorbetType -> EverySet.singleton (RArr sorbetType))
 
         JObj _ ->
             Err <| Json2SorbetError "Can't handle a nested object in this position yet"
@@ -127,7 +132,7 @@ jsonToSorbetStruct json =
                 (\k v struct ->
                     Result.map2
                         (Dict.insert k)
-                        (jsonValueToRubyType v |> Result.map EverySet.singleton)
+                        (jsonValueToSorbetType v)
                         struct
                 )
                 (Ok Dict.empty)
@@ -184,8 +189,7 @@ sorbetTypeToString : SorbetType -> String
 sorbetTypeToString sorbetType =
     case EverySet.toList sorbetType of
         [] ->
-            -- shouldn't actually happen
-            "NilClass"
+            "T.untyped"
 
         [ oneRubyType ] ->
             rubyTypeToString oneRubyType
@@ -207,6 +211,9 @@ sorbetTypeToString sorbetType =
 rubyTypeToString : RubyType -> String
 rubyTypeToString rubyType =
     case rubyType of
+        RArr sorbetType ->
+            "T::Array[" ++ sorbetTypeToString sorbetType ++ "]"
+
         RBool ->
             "T::Boolean"
 
