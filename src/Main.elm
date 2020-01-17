@@ -34,7 +34,7 @@ type Model
     = Empty
     | JsonError Json.Decode.Error
     | Unsupported Json2SorbetError
-    | Success SorbetStruct
+    | Success SorbetStructs
 
 
 init : Model
@@ -57,12 +57,27 @@ type RubyType
     | RString
 
 
+type alias SorbetStructs =
+    Dict String SorbetStruct
+
+
 type alias SorbetStruct =
     Dict String SorbetType
 
 
 type alias SorbetType =
     EverySet RubyType
+
+
+merges : SorbetStructs -> SorbetStructs -> SorbetStructs
+merges structs1 structs2 =
+    Dict.merge
+        (\field struct1 structs -> Dict.insert field struct1 structs)
+        (\field struct1 struct2 structs -> Dict.insert field (merge struct1 struct2) structs)
+        (\field struct2 structs -> Dict.insert field struct2 structs)
+        structs1
+        structs2
+        Dict.empty
 
 
 merge : SorbetStruct -> SorbetStruct -> SorbetStruct
@@ -124,8 +139,8 @@ datetime =
         Regex.fromString "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}"
 
 
-jsonToSorbetStruct : Json -> Result Json2SorbetError SorbetStruct
-jsonToSorbetStruct json =
+jsonToSorbetStructs : SorbetStructs -> String -> Json -> Result Json2SorbetError SorbetStructs
+jsonToSorbetStructs structsIn label json =
     case json of
         JObj object ->
             Dict.foldl
@@ -137,6 +152,7 @@ jsonToSorbetStruct json =
                 )
                 (Ok Dict.empty)
                 object
+                |> Result.map (Dict.singleton label)
 
         JArr [] ->
             Ok Dict.empty
@@ -144,8 +160,8 @@ jsonToSorbetStruct json =
         JArr (o :: os) ->
             -- Convert first item separately so that merge doesn't consider all fields nilable
             List.foldl
-                (\js struct -> Result.map2 merge struct (jsonToSorbetStruct js))
-                (jsonToSorbetStruct o)
+                (\js structsOut -> Result.map2 merges structsOut (jsonToSorbetStructs structsIn label js))
+                (jsonToSorbetStructs structsIn label o)
                 os
 
         _ ->
@@ -168,9 +184,9 @@ update msg model =
                     JsonError err
 
                 Ok json ->
-                    case jsonToSorbetStruct json of
-                        Ok struct ->
-                            Success struct
+                    case jsonToSorbetStructs Dict.empty "__top__" json of
+                        Ok structs ->
+                            Success structs
 
                         Err err ->
                             Unsupported err
@@ -261,11 +277,36 @@ rubyTypeToString rubyType =
             "String"
 
 
-sorbetStructToString : SorbetStruct -> String
-sorbetStructToString sorbetStruct =
+toClassName : String -> String
+toClassName label =
+    String.split "_" label
+        |> List.map capitalize
+        |> String.join ""
+
+
+capitalize : String -> String
+capitalize string =
+    case String.uncons string of
+        Just ( head, rest ) ->
+            String.cons (Char.toUpper head) rest
+
+        Nothing ->
+            string
+
+
+sorbetStructsToString : SorbetStructs -> String
+sorbetStructsToString sorbetStructs =
+    Dict.foldl
+        (\label struct output -> output ++ sorbetStructToString label struct)
+        ""
+        sorbetStructs
+
+
+sorbetStructToString : String -> SorbetStruct -> String
+sorbetStructToString label sorbetStruct =
     let
         firstLine =
-            "class Thing < T::Struct"
+            "class " ++ toClassName label ++ " < T::Struct"
 
         fields =
             Dict.toList sorbetStruct
@@ -323,8 +364,8 @@ resultView model =
                 Unsupported (Json2SorbetError errMsg) ->
                     "Unsupported: " ++ errMsg
 
-                Success sorbetStruct ->
-                    sorbetStructToString sorbetStruct
+                Success sorbetStructs ->
+                    sorbetStructsToString sorbetStructs
     in
     paragraph
         [ height fill
