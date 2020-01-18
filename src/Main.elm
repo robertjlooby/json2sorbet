@@ -1,7 +1,8 @@
 module Main exposing (main)
 
+import AssocList as Dict exposing (Dict)
 import Browser
-import Dict exposing (Dict)
+import Dict as CoreDict
 import Element exposing (Element, el, fill, height, html, htmlAttribute, paragraph, spacing, text, width)
 import Element.Font as Font
 import Element.Input exposing (focusedOnLoad, multiline)
@@ -57,8 +58,12 @@ type RubyType
     | RString
 
 
+type ClassName
+    = ClassName String
+
+
 type alias SorbetStructs =
-    Dict String SorbetStruct
+    Dict ClassName SorbetStruct
 
 
 type alias SorbetStruct =
@@ -139,7 +144,12 @@ datetime =
         Regex.fromString "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}"
 
 
-jsonToSorbetStructs : SorbetStructs -> String -> Json -> Result Json2SorbetError SorbetStructs
+fromCoreDict : CoreDict.Dict k v -> Dict k v
+fromCoreDict dict =
+    CoreDict.toList dict |> Dict.fromList
+
+
+jsonToSorbetStructs : SorbetStructs -> ClassName -> Json -> Result Json2SorbetError SorbetStructs
 jsonToSorbetStructs structsIn label json =
     case json of
         JObj object ->
@@ -151,7 +161,7 @@ jsonToSorbetStructs structsIn label json =
                         struct
                 )
                 (Ok Dict.empty)
-                object
+                (fromCoreDict object)
                 |> Result.map (Dict.singleton label)
 
         JArr [] ->
@@ -184,7 +194,7 @@ update msg model =
                     JsonError err
 
                 Ok json ->
-                    case jsonToSorbetStructs Dict.empty "__top__" json of
+                    case jsonToSorbetStructs Dict.empty (toClassName "Json2Sorbet") json of
                         Ok structs ->
                             Success structs
 
@@ -277,11 +287,13 @@ rubyTypeToString rubyType =
             "String"
 
 
-toClassName : String -> String
+
+toClassName : String -> ClassName
 toClassName label =
     String.split "_" label
         |> List.map capitalize
         |> String.join ""
+        |> ClassName
 
 
 capitalize : String -> String
@@ -302,11 +314,11 @@ sorbetStructsToString sorbetStructs =
         sorbetStructs
 
 
-sorbetStructToString : String -> SorbetStruct -> String
-sorbetStructToString label sorbetStruct =
+sorbetStructToString : ClassName -> SorbetStruct -> String
+sorbetStructToString (ClassName label) sorbetStruct =
     let
         firstLine =
-            "class " ++ toClassName label ++ " < T::Struct"
+            "class " ++ label ++ " < T::Struct"
 
         fields =
             Dict.toList sorbetStruct
