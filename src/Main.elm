@@ -56,6 +56,7 @@ type RubyType
     | RInt
     | RNil
     | RString
+    | RSorbetType ClassName
 
 
 type ClassName
@@ -96,40 +97,43 @@ merge struct1 struct2 =
         Dict.empty
 
 
-jsonValueToSorbetType : Json -> Result Json2SorbetError SorbetType
-jsonValueToSorbetType json =
+jsonValueToSorbetType : String -> Json -> SorbetType
+jsonValueToSorbetType label json =
     case json of
         JBool _ ->
-            Ok <| EverySet.singleton RBool
+            EverySet.singleton RBool
 
         JFloat _ ->
-            Ok <| EverySet.singleton RFloat
+            EverySet.singleton RFloat
 
         JInt _ ->
-            Ok <| EverySet.singleton RInt
+            EverySet.singleton RInt
 
         JNull ->
-            Ok <| EverySet.singleton RNil
+            EverySet.singleton RNil
 
         JString str ->
             if Regex.contains date str then
-                Ok <| EverySet.singleton RDate
+                EverySet.singleton RDate
 
             else if Regex.contains datetime str then
-                Ok <| EverySet.singleton RDateTime
+                EverySet.singleton RDateTime
 
             else
-                Ok <| EverySet.singleton RString
+                EverySet.singleton RString
 
         JArr arr ->
             List.foldl
-                (\js st -> Result.map2 EverySet.union (jsonValueToSorbetType js) st)
-                (Ok EverySet.empty)
+                (\js st -> EverySet.union (jsonValueToSorbetType label js) st)
+                EverySet.empty
                 arr
-                |> Result.map (\sorbetType -> EverySet.singleton (RArr sorbetType))
+                |> RArr
+                |> EverySet.singleton
 
         JObj _ ->
-            Err <| Json2SorbetError "Can't handle a nested object in this position yet"
+            toClassName label
+                |> RSorbetType
+                |> EverySet.singleton
 
 
 date : Regex.Regex
@@ -155,14 +159,14 @@ jsonToSorbetStructs structsIn label json =
         JObj object ->
             Dict.foldl
                 (\k v struct ->
-                    Result.map2
-                        (Dict.insert k)
-                        (jsonValueToSorbetType v)
+                    Dict.insert k
+                        (jsonValueToSorbetType k v)
                         struct
                 )
-                (Ok Dict.empty)
+                Dict.empty
                 (fromCoreDict object)
-                |> Result.map (Dict.singleton label)
+                |> Dict.singleton label
+                |> Ok
 
         JArr [] ->
             Ok Dict.empty
@@ -286,6 +290,8 @@ rubyTypeToString rubyType =
         RString ->
             "String"
 
+        RSorbetType (ClassName className) ->
+            className
 
 
 toClassName : String -> ClassName
