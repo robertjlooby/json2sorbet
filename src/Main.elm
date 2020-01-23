@@ -34,7 +34,6 @@ type Json2SorbetError
 type Model
     = Empty
     | JsonError Json.Decode.Error
-    | Unsupported Json2SorbetError
     | Success SorbetStructs
 
 
@@ -153,7 +152,7 @@ fromCoreDict dict =
     CoreDict.toList dict |> Dict.fromList
 
 
-jsonToSorbetStructs : SorbetStructs -> ClassName -> Json -> Result Json2SorbetError SorbetStructs
+jsonToSorbetStructs : SorbetStructs -> ClassName -> Json -> SorbetStructs
 jsonToSorbetStructs structsIn label json =
     case json of
         JObj object ->
@@ -166,20 +165,19 @@ jsonToSorbetStructs structsIn label json =
                 Dict.empty
                 (fromCoreDict object)
                 |> Dict.singleton label
-                |> Ok
-
-        JArr [] ->
-            Ok Dict.empty
+                |> merges structsIn
 
         JArr (o :: os) ->
             -- Convert first item separately so that merge doesn't consider all fields nilable
             List.foldl
-                (\js structsOut -> Result.map2 merges structsOut (jsonToSorbetStructs structsIn label js))
+                (\js structsOut -> merges structsOut (jsonToSorbetStructs structsIn label js))
                 (jsonToSorbetStructs structsIn label o)
                 os
 
         _ ->
-            Err <| Json2SorbetError "Top level value must be an object or array of objects"
+            jsonValueToSorbetType "singleValue" json
+                |> Dict.singleton "value"
+                |> Dict.singleton label
 
 
 type Msg
@@ -198,12 +196,8 @@ update msg model =
                     JsonError err
 
                 Ok json ->
-                    case jsonToSorbetStructs Dict.empty (toClassName "Json2Sorbet") json of
-                        Ok structs ->
-                            Success structs
-
-                        Err err ->
-                            Unsupported err
+                    jsonToSorbetStructs Dict.empty (toClassName "Json2Sorbet") json
+                        |> Success
 
 
 
@@ -378,9 +372,6 @@ resultView model =
 
                 JsonError err ->
                     Json.Decode.errorToString err
-
-                Unsupported (Json2SorbetError errMsg) ->
-                    "Unsupported: " ++ errMsg
 
                 Success sorbetStructs ->
                     sorbetStructsToString sorbetStructs
