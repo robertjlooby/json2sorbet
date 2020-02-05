@@ -96,43 +96,56 @@ merge struct1 struct2 =
         Dict.empty
 
 
-jsonValueToSorbetType : String -> Json -> SorbetType
-jsonValueToSorbetType label json =
+jsonValueToSorbetType : SorbetStructs -> String -> Json -> ( SorbetType, SorbetStructs )
+jsonValueToSorbetType structsIn label json =
     case json of
         JBool _ ->
-            EverySet.singleton RBool
+            ( EverySet.singleton RBool, structsIn )
 
         JFloat _ ->
-            EverySet.singleton RFloat
+            ( EverySet.singleton RFloat, structsIn )
 
         JInt _ ->
-            EverySet.singleton RInt
+            ( EverySet.singleton RInt, structsIn )
 
         JNull ->
-            EverySet.singleton RNil
+            ( EverySet.singleton RNil, structsIn )
 
         JString str ->
             if Regex.contains date str then
-                EverySet.singleton RDate
+                ( EverySet.singleton RDate, structsIn )
 
             else if Regex.contains datetime str then
-                EverySet.singleton RDateTime
+                ( EverySet.singleton RDateTime, structsIn )
 
             else
-                EverySet.singleton RString
+                ( EverySet.singleton RString, structsIn )
 
         JArr arr ->
             List.foldl
-                (\js st -> EverySet.union (jsonValueToSorbetType label js) st)
-                EverySet.empty
+                (\js ( arrTypesIn, structsAcc ) ->
+                    case jsonValueToSorbetType structsAcc label js of
+                        ( arrTypesOut, structsOut ) ->
+                            ( EverySet.union arrTypesIn arrTypesOut, structsOut )
+                )
+                ( EverySet.empty, structsIn )
                 arr
-                |> RArr
-                |> EverySet.singleton
+                |> (\( t, structsOut ) -> ( EverySet.singleton (RArr t), structsOut ))
 
-        JObj _ ->
-            toClassName label
-                |> RSorbetType
-                |> EverySet.singleton
+        (JObj _) as object ->
+            let
+                className =
+                    toClassName label
+
+                t =
+                    className
+                        |> RSorbetType
+                        |> EverySet.singleton
+
+                structsOut =
+                    jsonToSorbetStructs structsIn className object
+            in
+            ( t, structsOut )
 
 
 date : Regex.Regex
@@ -157,15 +170,14 @@ jsonToSorbetStructs structsIn label json =
     case json of
         JObj object ->
             Dict.foldl
-                (\k v struct ->
-                    Dict.insert k
-                        (jsonValueToSorbetType k v)
-                        struct
+                (\k v ( struct, structs ) ->
+                    case jsonValueToSorbetType structs k v of
+                        ( typeOut, structsOut ) ->
+                            ( Dict.insert k typeOut struct, structsOut )
                 )
-                Dict.empty
+                ( Dict.empty, structsIn )
                 (fromCoreDict object)
-                |> Dict.singleton label
-                |> merges structsIn
+                |> (\( struct, structsOut ) -> merges structsOut (Dict.singleton label struct))
 
         JArr (o :: os) ->
             -- Convert first item separately so that merge doesn't consider all fields nilable
@@ -175,9 +187,9 @@ jsonToSorbetStructs structsIn label json =
                 os
 
         _ ->
-            jsonValueToSorbetType "singleValue" json
-                |> Dict.singleton "value"
-                |> Dict.singleton label
+            case jsonValueToSorbetType structsIn "singleValue" json of
+                ( typeOut, structsOut ) ->
+                    merges (Dict.singleton label (Dict.singleton "value" typeOut)) structsOut
 
 
 type Msg
@@ -331,7 +343,7 @@ sorbetStructToString (ClassName label) sorbetStruct =
     List.concat
         [ [ firstLine ]
         , fields
-        , [ lastLine ]
+        , [ lastLine ++ "\n\n" ]
         ]
         |> String.join "\n"
 
