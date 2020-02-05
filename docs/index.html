@@ -5272,12 +5272,11 @@ var $author$project$Main$JsonError = function (a) {
 	return {$: 1, a: a};
 };
 var $author$project$Main$Success = function (a) {
-	return {$: 3, a: a};
-};
-var $author$project$Main$Unsupported = function (a) {
 	return {$: 2, a: a};
 };
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
+var $pzp1997$assoc_list$AssocList$D = $elm$core$Basics$identity;
+var $pzp1997$assoc_list$AssocList$empty = _List_Nil;
 var $the_sett$decode_generic$Json$Decode$Generic$JArr = function (a) {
 	return {$: 6, a: a};
 };
@@ -5491,32 +5490,6 @@ var $the_sett$decode_generic$Json$Decode$Generic$json = $the_sett$decode_generic
 $the_sett$decode_generic$Json$Decode$Generic$cyclic$json = function () {
 	return $the_sett$decode_generic$Json$Decode$Generic$json;
 };
-var $author$project$Main$Json2SorbetError = $elm$core$Basics$identity;
-var $elm$core$Dict$foldl = F3(
-	function (func, acc, dict) {
-		foldl:
-		while (true) {
-			if (dict.$ === -2) {
-				return acc;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var $temp$func = func,
-					$temp$acc = A3(
-					func,
-					key,
-					value,
-					A3($elm$core$Dict$foldl, func, acc, left)),
-					$temp$dict = right;
-				func = $temp$func;
-				acc = $temp$acc;
-				dict = $temp$dict;
-				continue foldl;
-			}
-		}
-	});
 var $author$project$Main$RArr = function (a) {
 	return {$: 0, a: a};
 };
@@ -5526,6 +5499,9 @@ var $author$project$Main$RDateTime = {$: 3};
 var $author$project$Main$RFloat = {$: 4};
 var $author$project$Main$RInt = {$: 5};
 var $author$project$Main$RNil = {$: 6};
+var $author$project$Main$RSorbetType = function (a) {
+	return {$: 8, a: a};
+};
 var $author$project$Main$RString = {$: 7};
 var $elm$regex$Regex$Match = F4(
 	function (match, index, number, submatches) {
@@ -5558,47 +5534,21 @@ var $author$project$Main$datetime = A2(
 	$elm$regex$Regex$never,
 	$elm$regex$Regex$fromString('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}'));
 var $Gizra$elm_all_set$EverySet$EverySet = $elm$core$Basics$identity;
-var $pzp1997$assoc_list$AssocList$D = $elm$core$Basics$identity;
-var $pzp1997$assoc_list$AssocList$empty = _List_Nil;
 var $Gizra$elm_all_set$EverySet$empty = $pzp1997$assoc_list$AssocList$empty;
-var $elm$core$Result$map = F2(
-	function (func, ra) {
-		if (!ra.$) {
-			var a = ra.a;
-			return $elm$core$Result$Ok(
-				func(a));
-		} else {
-			var e = ra.a;
-			return $elm$core$Result$Err(e);
-		}
+var $pzp1997$assoc_list$AssocList$foldl = F3(
+	function (func, initialResult, _v0) {
+		var alist = _v0;
+		return A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v1, result) {
+					var key = _v1.a;
+					var value = _v1.b;
+					return A3(func, key, value, result);
+				}),
+			initialResult,
+			alist);
 	});
-var $elm$core$Result$map2 = F3(
-	function (func, ra, rb) {
-		if (ra.$ === 1) {
-			var x = ra.a;
-			return $elm$core$Result$Err(x);
-		} else {
-			var a = ra.a;
-			if (rb.$ === 1) {
-				var x = rb.a;
-				return $elm$core$Result$Err(x);
-			} else {
-				var b = rb.a;
-				return $elm$core$Result$Ok(
-					A2(func, a, b));
-			}
-		}
-	});
-var $pzp1997$assoc_list$AssocList$singleton = F2(
-	function (key, value) {
-		return _List_fromArray(
-			[
-				_Utils_Tuple2(key, value)
-			]);
-	});
-var $Gizra$elm_all_set$EverySet$singleton = function (k) {
-	return A2($pzp1997$assoc_list$AssocList$singleton, k, 0);
-};
 var $elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -5631,6 +5581,118 @@ var $pzp1997$assoc_list$AssocList$insert = F3(
 			_Utils_Tuple2(key, value),
 			alteredAlist);
 	});
+var $pzp1997$assoc_list$AssocList$fromList = function (alist) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, result) {
+				var key = _v0.a;
+				var value = _v0.b;
+				return A3($pzp1997$assoc_list$AssocList$insert, key, value, result);
+			}),
+		_List_Nil,
+		alist);
+};
+var $author$project$Main$fromCoreDict = function (dict) {
+	return $pzp1997$assoc_list$AssocList$fromList(
+		$elm$core$Dict$toList(dict));
+};
+var $pzp1997$assoc_list$AssocList$get = F2(
+	function (targetKey, _v0) {
+		get:
+		while (true) {
+			var alist = _v0;
+			if (!alist.b) {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var _v2 = alist.a;
+				var key = _v2.a;
+				var value = _v2.b;
+				var rest = alist.b;
+				if (_Utils_eq(key, targetKey)) {
+					return $elm$core$Maybe$Just(value);
+				} else {
+					var $temp$targetKey = targetKey,
+						$temp$_v0 = rest;
+					targetKey = $temp$targetKey;
+					_v0 = $temp$_v0;
+					continue get;
+				}
+			}
+		}
+	});
+var $pzp1997$assoc_list$AssocList$member = F2(
+	function (targetKey, dict) {
+		var _v0 = A2($pzp1997$assoc_list$AssocList$get, targetKey, dict);
+		if (!_v0.$) {
+			return true;
+		} else {
+			return false;
+		}
+	});
+var $elm$core$List$partition = F2(
+	function (pred, list) {
+		var step = F2(
+			function (x, _v0) {
+				var trues = _v0.a;
+				var falses = _v0.b;
+				return pred(x) ? _Utils_Tuple2(
+					A2($elm$core$List$cons, x, trues),
+					falses) : _Utils_Tuple2(
+					trues,
+					A2($elm$core$List$cons, x, falses));
+			});
+		return A3(
+			$elm$core$List$foldr,
+			step,
+			_Utils_Tuple2(_List_Nil, _List_Nil),
+			list);
+	});
+var $pzp1997$assoc_list$AssocList$merge = F6(
+	function (leftStep, bothStep, rightStep, leftDict, _v0, initialResult) {
+		var leftAlist = leftDict;
+		var rightAlist = _v0;
+		var _v1 = A2(
+			$elm$core$List$partition,
+			function (_v2) {
+				var key = _v2.a;
+				return A2($pzp1997$assoc_list$AssocList$member, key, leftDict);
+			},
+			rightAlist);
+		var inBothAlist = _v1.a;
+		var inRightOnlyAlist = _v1.b;
+		var intermediateResult = A3(
+			$elm$core$List$foldr,
+			F2(
+				function (_v5, result) {
+					var rKey = _v5.a;
+					var rValue = _v5.b;
+					return A3(rightStep, rKey, rValue, result);
+				}),
+			initialResult,
+			inRightOnlyAlist);
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (_v3, result) {
+					var lKey = _v3.a;
+					var lValue = _v3.b;
+					var _v4 = A2($pzp1997$assoc_list$AssocList$get, lKey, inBothAlist);
+					if (!_v4.$) {
+						var rValue = _v4.a;
+						return A4(bothStep, lKey, lValue, rValue, result);
+					} else {
+						return A3(leftStep, lKey, lValue, result);
+					}
+				}),
+			intermediateResult,
+			leftAlist);
+	});
+var $Gizra$elm_all_set$EverySet$insert = F2(
+	function (k, _v0) {
+		var d = _v0;
+		return A3($pzp1997$assoc_list$AssocList$insert, k, 0, d);
+	});
 var $pzp1997$assoc_list$AssocList$union = F2(
 	function (_v0, rightDict) {
 		var leftAlist = _v0;
@@ -5651,124 +5713,14 @@ var $Gizra$elm_all_set$EverySet$union = F2(
 		var d2 = _v1;
 		return A2($pzp1997$assoc_list$AssocList$union, d1, d2);
 	});
-var $author$project$Main$jsonValueToSorbetType = function (json) {
-	switch (json.$) {
-		case 1:
-			return $elm$core$Result$Ok(
-				$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RBool));
-		case 3:
-			return $elm$core$Result$Ok(
-				$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RFloat));
-		case 2:
-			return $elm$core$Result$Ok(
-				$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RInt));
-		case 4:
-			return $elm$core$Result$Ok(
-				$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RNil));
-		case 0:
-			var str = json.a;
-			return A2($elm$regex$Regex$contains, $author$project$Main$date, str) ? $elm$core$Result$Ok(
-				$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RDate)) : (A2($elm$regex$Regex$contains, $author$project$Main$datetime, str) ? $elm$core$Result$Ok(
-				$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RDateTime)) : $elm$core$Result$Ok(
-				$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RString)));
-		case 6:
-			var arr = json.a;
-			return A2(
-				$elm$core$Result$map,
-				function (sorbetType) {
-					return $Gizra$elm_all_set$EverySet$singleton(
-						$author$project$Main$RArr(sorbetType));
-				},
-				A3(
-					$elm$core$List$foldl,
-					F2(
-						function (js, st) {
-							return A3(
-								$elm$core$Result$map2,
-								$Gizra$elm_all_set$EverySet$union,
-								$author$project$Main$jsonValueToSorbetType(js),
-								st);
-						}),
-					$elm$core$Result$Ok($Gizra$elm_all_set$EverySet$empty),
-					arr));
-		default:
-			return $elm$core$Result$Err('Can\'t handle a nested object in this position yet');
-	}
-};
-var $Gizra$elm_all_set$EverySet$insert = F2(
-	function (k, _v0) {
-		var d = _v0;
-		return A3($pzp1997$assoc_list$AssocList$insert, k, 0, d);
-	});
-var $elm$core$Dict$merge = F6(
-	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
-		var stepState = F3(
-			function (rKey, rValue, _v0) {
-				stepState:
-				while (true) {
-					var list = _v0.a;
-					var result = _v0.b;
-					if (!list.b) {
-						return _Utils_Tuple2(
-							list,
-							A3(rightStep, rKey, rValue, result));
-					} else {
-						var _v2 = list.a;
-						var lKey = _v2.a;
-						var lValue = _v2.b;
-						var rest = list.b;
-						if (_Utils_cmp(lKey, rKey) < 0) {
-							var $temp$rKey = rKey,
-								$temp$rValue = rValue,
-								$temp$_v0 = _Utils_Tuple2(
-								rest,
-								A3(leftStep, lKey, lValue, result));
-							rKey = $temp$rKey;
-							rValue = $temp$rValue;
-							_v0 = $temp$_v0;
-							continue stepState;
-						} else {
-							if (_Utils_cmp(lKey, rKey) > 0) {
-								return _Utils_Tuple2(
-									list,
-									A3(rightStep, rKey, rValue, result));
-							} else {
-								return _Utils_Tuple2(
-									rest,
-									A4(bothStep, lKey, lValue, rValue, result));
-							}
-						}
-					}
-				}
-			});
-		var _v3 = A3(
-			$elm$core$Dict$foldl,
-			stepState,
-			_Utils_Tuple2(
-				$elm$core$Dict$toList(leftDict),
-				initialResult),
-			rightDict);
-		var leftovers = _v3.a;
-		var intermediateResult = _v3.b;
-		return A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v4, result) {
-					var k = _v4.a;
-					var v = _v4.b;
-					return A3(leftStep, k, v, result);
-				}),
-			intermediateResult,
-			leftovers);
-	});
 var $author$project$Main$merge = F2(
 	function (struct1, struct2) {
 		return A6(
-			$elm$core$Dict$merge,
+			$pzp1997$assoc_list$AssocList$merge,
 			F3(
 				function (field, types1, struct) {
 					return A3(
-						$elm$core$Dict$insert,
+						$pzp1997$assoc_list$AssocList$insert,
 						field,
 						A2($Gizra$elm_all_set$EverySet$insert, $author$project$Main$RNil, types1),
 						struct);
@@ -5776,7 +5728,7 @@ var $author$project$Main$merge = F2(
 			F4(
 				function (field, types1, types2, struct) {
 					return A3(
-						$elm$core$Dict$insert,
+						$pzp1997$assoc_list$AssocList$insert,
 						field,
 						A2($Gizra$elm_all_set$EverySet$union, types1, types2),
 						struct);
@@ -5784,55 +5736,201 @@ var $author$project$Main$merge = F2(
 			F3(
 				function (field, types2, struct) {
 					return A3(
-						$elm$core$Dict$insert,
+						$pzp1997$assoc_list$AssocList$insert,
 						field,
 						A2($Gizra$elm_all_set$EverySet$insert, $author$project$Main$RNil, types2),
 						struct);
 				}),
 			struct1,
 			struct2,
-			$elm$core$Dict$empty);
+			$pzp1997$assoc_list$AssocList$empty);
 	});
-var $author$project$Main$jsonToSorbetStruct = function (json) {
-	switch (json.$) {
-		case 5:
-			var object = json.a;
-			return A3(
-				$elm$core$Dict$foldl,
-				F3(
-					function (k, v, struct) {
-						return A3(
-							$elm$core$Result$map2,
-							$elm$core$Dict$insert(k),
-							$author$project$Main$jsonValueToSorbetType(v),
-							struct);
-					}),
-				$elm$core$Result$Ok($elm$core$Dict$empty),
-				object);
-		case 6:
-			if (!json.a.b) {
-				return $elm$core$Result$Ok($elm$core$Dict$empty);
-			} else {
-				var _v1 = json.a;
-				var o = _v1.a;
-				var os = _v1.b;
-				return A3(
-					$elm$core$List$foldl,
-					F2(
-						function (js, struct) {
-							return A3(
-								$elm$core$Result$map2,
-								$author$project$Main$merge,
-								struct,
-								$author$project$Main$jsonToSorbetStruct(js));
-						}),
-					$author$project$Main$jsonToSorbetStruct(o),
-					os);
-			}
-		default:
-			return $elm$core$Result$Err('Top level value must be an object or array of objects');
+var $author$project$Main$merges = F2(
+	function (structs1, structs2) {
+		return A6(
+			$pzp1997$assoc_list$AssocList$merge,
+			F3(
+				function (field, struct1, structs) {
+					return A3($pzp1997$assoc_list$AssocList$insert, field, struct1, structs);
+				}),
+			F4(
+				function (field, struct1, struct2, structs) {
+					return A3(
+						$pzp1997$assoc_list$AssocList$insert,
+						field,
+						A2($author$project$Main$merge, struct1, struct2),
+						structs);
+				}),
+			F3(
+				function (field, struct2, structs) {
+					return A3($pzp1997$assoc_list$AssocList$insert, field, struct2, structs);
+				}),
+			structs1,
+			structs2,
+			$pzp1997$assoc_list$AssocList$empty);
+	});
+var $pzp1997$assoc_list$AssocList$singleton = F2(
+	function (key, value) {
+		return _List_fromArray(
+			[
+				_Utils_Tuple2(key, value)
+			]);
+	});
+var $Gizra$elm_all_set$EverySet$singleton = function (k) {
+	return A2($pzp1997$assoc_list$AssocList$singleton, k, 0);
+};
+var $author$project$Main$ClassName = $elm$core$Basics$identity;
+var $elm$core$String$cons = _String_cons;
+var $elm$core$Char$toUpper = _Char_toUpper;
+var $author$project$Main$capitalize = function (string) {
+	var _v0 = $elm$core$String$uncons(string);
+	if (!_v0.$) {
+		var _v1 = _v0.a;
+		var head = _v1.a;
+		var rest = _v1.b;
+		return A2(
+			$elm$core$String$cons,
+			$elm$core$Char$toUpper(head),
+			rest);
+	} else {
+		return string;
 	}
 };
+var $author$project$Main$toClassName = function (label) {
+	return A2(
+		$elm$core$String$join,
+		'',
+		A2(
+			$elm$core$List$map,
+			$author$project$Main$capitalize,
+			A2($elm$core$String$split, '_', label)));
+};
+var $author$project$Main$jsonToSorbetStructs = F3(
+	function (structsIn, label, json) {
+		_v4$2:
+		while (true) {
+			switch (json.$) {
+				case 5:
+					var object = json.a;
+					return function (_v7) {
+						var struct = _v7.a;
+						var structsOut = _v7.b;
+						return A2(
+							$author$project$Main$merges,
+							structsOut,
+							A2($pzp1997$assoc_list$AssocList$singleton, label, struct));
+					}(
+						A3(
+							$pzp1997$assoc_list$AssocList$foldl,
+							F3(
+								function (k, v, _v5) {
+									var struct = _v5.a;
+									var structs = _v5.b;
+									var _v6 = A3($author$project$Main$jsonValueToSorbetType, structs, k, v);
+									var typeOut = _v6.a;
+									var structsOut = _v6.b;
+									return _Utils_Tuple2(
+										A3($pzp1997$assoc_list$AssocList$insert, k, typeOut, struct),
+										structsOut);
+								}),
+							_Utils_Tuple2($pzp1997$assoc_list$AssocList$empty, structsIn),
+							$author$project$Main$fromCoreDict(object)));
+				case 6:
+					if (json.a.b) {
+						var _v8 = json.a;
+						var o = _v8.a;
+						var os = _v8.b;
+						return A3(
+							$elm$core$List$foldl,
+							F2(
+								function (js, structsOut) {
+									return A2(
+										$author$project$Main$merges,
+										structsOut,
+										A3($author$project$Main$jsonToSorbetStructs, structsIn, label, js));
+								}),
+							A3($author$project$Main$jsonToSorbetStructs, structsIn, label, o),
+							os);
+					} else {
+						break _v4$2;
+					}
+				default:
+					break _v4$2;
+			}
+		}
+		var _v9 = A3($author$project$Main$jsonValueToSorbetType, structsIn, 'singleValue', json);
+		var typeOut = _v9.a;
+		var structsOut = _v9.b;
+		return A2(
+			$author$project$Main$merges,
+			A2(
+				$pzp1997$assoc_list$AssocList$singleton,
+				label,
+				A2($pzp1997$assoc_list$AssocList$singleton, 'value', typeOut)),
+			structsOut);
+	});
+var $author$project$Main$jsonValueToSorbetType = F3(
+	function (structsIn, label, json) {
+		switch (json.$) {
+			case 1:
+				return _Utils_Tuple2(
+					$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RBool),
+					structsIn);
+			case 3:
+				return _Utils_Tuple2(
+					$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RFloat),
+					structsIn);
+			case 2:
+				return _Utils_Tuple2(
+					$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RInt),
+					structsIn);
+			case 4:
+				return _Utils_Tuple2(
+					$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RNil),
+					structsIn);
+			case 0:
+				var str = json.a;
+				return A2($elm$regex$Regex$contains, $author$project$Main$date, str) ? _Utils_Tuple2(
+					$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RDate),
+					structsIn) : (A2($elm$regex$Regex$contains, $author$project$Main$datetime, str) ? _Utils_Tuple2(
+					$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RDateTime),
+					structsIn) : _Utils_Tuple2(
+					$Gizra$elm_all_set$EverySet$singleton($author$project$Main$RString),
+					structsIn));
+			case 6:
+				var arr = json.a;
+				return function (_v3) {
+					var t = _v3.a;
+					var structsOut = _v3.b;
+					return _Utils_Tuple2(
+						$Gizra$elm_all_set$EverySet$singleton(
+							$author$project$Main$RArr(t)),
+						structsOut);
+				}(
+					A3(
+						$elm$core$List$foldl,
+						F2(
+							function (js, _v1) {
+								var arrTypesIn = _v1.a;
+								var structsAcc = _v1.b;
+								var _v2 = A3($author$project$Main$jsonValueToSorbetType, structsAcc, label, js);
+								var arrTypesOut = _v2.a;
+								var structsOut = _v2.b;
+								return _Utils_Tuple2(
+									A2($Gizra$elm_all_set$EverySet$union, arrTypesIn, arrTypesOut),
+									structsOut);
+							}),
+						_Utils_Tuple2($Gizra$elm_all_set$EverySet$empty, structsIn),
+						arr));
+			default:
+				var object = json;
+				var className = $author$project$Main$toClassName(label);
+				var structsOut = A3($author$project$Main$jsonToSorbetStructs, structsIn, className, object);
+				var t = $Gizra$elm_all_set$EverySet$singleton(
+					$author$project$Main$RSorbetType(className));
+				return _Utils_Tuple2(t, structsOut);
+		}
+	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		if (msg === '') {
@@ -5845,14 +5943,12 @@ var $author$project$Main$update = F2(
 				return $author$project$Main$JsonError(err);
 			} else {
 				var json = _v1.a;
-				var _v2 = $author$project$Main$jsonToSorbetStruct(json);
-				if (!_v2.$) {
-					var struct = _v2.a;
-					return $author$project$Main$Success(struct);
-				} else {
-					var err = _v2.a;
-					return $author$project$Main$Unsupported(err);
-				}
+				return $author$project$Main$Success(
+					A3(
+						$author$project$Main$jsonToSorbetStructs,
+						$pzp1997$assoc_list$AssocList$empty,
+						$author$project$Main$toClassName('Json2Sorbet'),
+						json));
 			}
 		}
 	});
@@ -12671,39 +12767,6 @@ var $author$project$Main$isNonEmptyArray = function (rubyType) {
 		return false;
 	}
 };
-var $pzp1997$assoc_list$AssocList$get = F2(
-	function (targetKey, _v0) {
-		get:
-		while (true) {
-			var alist = _v0;
-			if (!alist.b) {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var _v2 = alist.a;
-				var key = _v2.a;
-				var value = _v2.b;
-				var rest = alist.b;
-				if (_Utils_eq(key, targetKey)) {
-					return $elm$core$Maybe$Just(value);
-				} else {
-					var $temp$targetKey = targetKey,
-						$temp$_v0 = rest;
-					targetKey = $temp$targetKey;
-					_v0 = $temp$_v0;
-					continue get;
-				}
-			}
-		}
-	});
-var $pzp1997$assoc_list$AssocList$member = F2(
-	function (targetKey, dict) {
-		var _v0 = A2($pzp1997$assoc_list$AssocList$get, targetKey, dict);
-		if (!_v0.$) {
-			return true;
-		} else {
-			return false;
-		}
-	});
 var $Gizra$elm_all_set$EverySet$member = F2(
 	function (k, _v0) {
 		var d = _v0;
@@ -12747,8 +12810,11 @@ var $author$project$Main$rubyTypeToString = function (rubyType) {
 			return 'Integer';
 		case 6:
 			return 'NilClass';
-		default:
+		case 7:
 			return 'String';
+		default:
+			var className = rubyType.a;
+			return className;
 	}
 };
 var $author$project$Main$sorbetTypeToString = function (sorbetType) {
@@ -12781,28 +12847,46 @@ var $author$project$Main$fieldLine = function (_v0) {
 	var sorbetType = _v0.b;
 	return '  const :' + (field + (', ' + $author$project$Main$sorbetTypeToString(sorbetType)));
 };
-var $author$project$Main$sorbetStructToString = function (sorbetStruct) {
-	var lastLine = 'end';
-	var firstLine = 'class Thing < T::Struct';
-	var fields = A2(
-		$elm$core$List$map,
-		$author$project$Main$fieldLine,
-		A2(
-			$elm$core$List$sortBy,
-			$elm$core$Tuple$first,
-			$elm$core$Dict$toList(sorbetStruct)));
-	return A2(
-		$elm$core$String$join,
-		'\n',
-		$elm$core$List$concat(
-			_List_fromArray(
-				[
-					_List_fromArray(
-					[firstLine]),
-					fields,
-					_List_fromArray(
-					[lastLine])
-				])));
+var $pzp1997$assoc_list$AssocList$toList = function (_v0) {
+	var alist = _v0;
+	return alist;
+};
+var $author$project$Main$sorbetStructToString = F2(
+	function (_v0, sorbetStruct) {
+		var label = _v0;
+		var lastLine = 'end';
+		var firstLine = 'class ' + (label + ' < T::Struct');
+		var fields = A2(
+			$elm$core$List$map,
+			$author$project$Main$fieldLine,
+			A2(
+				$elm$core$List$sortBy,
+				$elm$core$Tuple$first,
+				$pzp1997$assoc_list$AssocList$toList(sorbetStruct)));
+		return A2(
+			$elm$core$String$join,
+			'\n',
+			$elm$core$List$concat(
+				_List_fromArray(
+					[
+						_List_fromArray(
+						[firstLine]),
+						fields,
+						_List_fromArray(
+						[lastLine + '\n\n'])
+					])));
+	});
+var $author$project$Main$sorbetStructsToString = function (sorbetStructs) {
+	return A3(
+		$pzp1997$assoc_list$AssocList$foldl,
+		F3(
+			function (label, struct, output) {
+				return _Utils_ap(
+					output,
+					A2($author$project$Main$sorbetStructToString, label, struct));
+			}),
+		'',
+		sorbetStructs);
 };
 var $author$project$Main$resultView = function (model) {
 	var contents = function () {
@@ -12812,12 +12896,9 @@ var $author$project$Main$resultView = function (model) {
 			case 1:
 				var err = model.a;
 				return $elm$json$Json$Decode$errorToString(err);
-			case 2:
-				var errMsg = model.a;
-				return 'Unsupported: ' + errMsg;
 			default:
-				var sorbetStruct = model.a;
-				return $author$project$Main$sorbetStructToString(sorbetStruct);
+				var sorbetStructs = model.a;
+				return $author$project$Main$sorbetStructsToString(sorbetStructs);
 		}
 	}();
 	return A2(
