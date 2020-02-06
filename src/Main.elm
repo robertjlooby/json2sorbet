@@ -3,7 +3,7 @@ module Main exposing (main)
 import AssocList as Dict exposing (Dict)
 import Browser
 import Dict as CoreDict
-import Element exposing (Element, el, fill, height, html, htmlAttribute, paragraph, scrollbars, spacing, text, width)
+import Element exposing (Element, centerX, el, fill, height, html, htmlAttribute, link, paragraph, scrollbars, spacing, text, width)
 import Element.Font as Font
 import Element.Input exposing (focusedOnLoad, multiline)
 import EverySet exposing (EverySet)
@@ -350,12 +350,23 @@ sorbetStructToString (ClassName label) sorbetStruct =
 
 view : Model -> Html Msg
 view model =
-    Element.row
-        [ height fill
-        , width fill
-        , spacing 10
-        ]
-        [ inputView, resultView model ]
+    let
+        mainRow =
+            Element.row
+                [ height fill
+                , width fill
+                , spacing 10
+                ]
+                [ inputView, resultView model ]
+
+        sourceLink =
+            link
+                [ width fill ]
+                { url = "https://github.com/robertjlooby/json2sorbet"
+                , label = el [ centerX ] (text "source code")
+                }
+    in
+    Element.column [ height fill, width fill, spacing 10 ] [ mainRow, sourceLink ]
         |> Element.layout []
 
 
