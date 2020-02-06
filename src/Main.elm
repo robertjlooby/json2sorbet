@@ -321,7 +321,7 @@ capitalize string =
 sorbetStructsToString : SorbetStructs -> String
 sorbetStructsToString sorbetStructs =
     Dict.foldl
-        (\label struct output -> output ++ sorbetStructToString label struct)
+        (\label struct output -> sorbetStructToString label struct ++ output)
         ""
         sorbetStructs
 
