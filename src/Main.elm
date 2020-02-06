@@ -3,7 +3,7 @@ module Main exposing (main)
 import AssocList as Dict exposing (Dict)
 import Browser
 import Dict as CoreDict
-import Element exposing (Element, el, fill, height, html, htmlAttribute, paragraph, spacing, text, width)
+import Element exposing (Element, el, fill, height, html, htmlAttribute, paragraph, scrollbars, spacing, text, width)
 import Element.Font as Font
 import Element.Input exposing (focusedOnLoad, multiline)
 import EverySet exposing (EverySet)
@@ -365,6 +365,7 @@ inputView =
         [ height fill
         , width fill
         , focusedOnLoad
+        , scrollbars
         ]
         { label = Element.Input.labelHidden "JSON"
         , onChange = NewJson
@@ -393,5 +394,6 @@ resultView model =
         , width fill
         , Font.family [ Font.monospace ]
         , htmlAttribute (style "white-space" "pre-wrap")
+        , scrollbars
         ]
         [ html (Html.text contents) ]
