@@ -12416,13 +12416,15 @@ var $mdgriffith$elm_ui$Element$Input$multiline = F2(
 			attrs,
 			{cx: multi.cx, cE: multi.cE, cN: multi.cN, c6: multi.c6});
 	});
+var $mdgriffith$elm_ui$Element$scrollbars = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$overflow, $mdgriffith$elm_ui$Internal$Style$classes.cR);
 var $author$project$Main$inputView = A2(
 	$mdgriffith$elm_ui$Element$Input$multiline,
 	_List_fromArray(
 		[
 			$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
 			$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-			$mdgriffith$elm_ui$Element$Input$focusedOnLoad
+			$mdgriffith$elm_ui$Element$Input$focusedOnLoad,
+			$mdgriffith$elm_ui$Element$scrollbars
 		]),
 	{
 		cx: $mdgriffith$elm_ui$Element$Input$labelHidden('JSON'),
@@ -12911,7 +12913,8 @@ var $author$project$Main$resultView = function (model) {
 				_List_fromArray(
 					[$mdgriffith$elm_ui$Element$Font$monospace])),
 				$mdgriffith$elm_ui$Element$htmlAttribute(
-				A2($elm$html$Html$Attributes$style, 'white-space', 'pre-wrap'))
+				A2($elm$html$Html$Attributes$style, 'white-space', 'pre-wrap')),
+				$mdgriffith$elm_ui$Element$scrollbars
 			]),
 		_List_fromArray(
 			[
